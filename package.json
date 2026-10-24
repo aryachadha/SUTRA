@@ -1,0 +1,97 @@
+{
+  "name": "sutra",
+  "version": "1.0.0",
+  "description": "Smart Urban Taskforce & Resource Alliance — Interdepartmental coordination platform for Indian cities",
+  "author": "Arya Chadha <arya@sutra.gov.in>",
+  "private": true,
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev:vite": "vite",
+    "dev:server": "node server/index.js",
+    "dev": "concurrently -k \"npm run dev:server\" \"npm run dev:vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build:vite": "vite build",
+    "build:electron": "electron-builder --mac dmg --arm64",
+    "build": "npm run build:vite && npm run build:electron",
+    "start": "electron .",
+    "server": "node server/index.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:seed": "node prisma/seed.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "build": {
+    "appId": "in.gov.sutra.app",
+    "productName": "SUTRA",
+    "copyright": "Copyright © 2026 Smart Urban Taskforce & Resource Alliance",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.icns",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "dist-vite/**/*",
+      "electron/**/*",
+      "server/**/*",
+      "prisma/**/*",
+      "package.json"
+    ]
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.460.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.49",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^3.4.15",
+    "vite": "^5.4.11",
+    "wait-on": "^8.0.1"
+  }
+}
