@@ -56,6 +56,9 @@
         "height": 380
       }
     },
+    "asarUnpack": [
+      "server/prisma-client/**/*.node"
+    ],
     "directories": {
       "output": "dist"
     },

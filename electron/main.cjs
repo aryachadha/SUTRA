@@ -14,7 +14,7 @@ function startBackendServer() {
     serverProcess = startServer(3001);
     console.log('[Electron] Embedded SUTRA API server started on port 3001');
   } catch (err) {
-    console.log('[Electron] External or existing API server active, connecting to port 3001');
+    console.error('[Electron] Failed to start embedded server:', err);
   }
 }
 

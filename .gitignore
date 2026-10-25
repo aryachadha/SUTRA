@@ -21,6 +21,7 @@ out/
 dev.db
 *.db
 *.db-journal
+server/prisma-client/
 
 # Logs
 npm-debug.log*

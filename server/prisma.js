@@ -1,4 +1,15 @@
-const { PrismaClient } = require('@prisma/client');
+const path = require('path');
+let PrismaClient;
+
+try {
+  ({ PrismaClient } = require('./prisma-client'));
+} catch (e) {
+  try {
+    ({ PrismaClient } = require('@prisma/client'));
+  } catch (err2) {
+    console.error('Failed to load PrismaClient:', err2);
+  }
+}
 
 let prisma;
 

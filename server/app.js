@@ -1,4 +1,16 @@
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Load environment variables from potential root locations
+dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config({ path: path.join(process.cwd(), '.env') });
+dotenv.config();
+
+// Ensure standard defaults if launched from Finder
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://aryachadha@localhost:5432/sutra_db?schema=public';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'sutra-urban-taskforce-secret-key-2026-jaipur';
+process.env.PORT = process.env.PORT || '3001';
+
 const express = require('express');
 const cors = require('cors');
 
@@ -69,6 +81,13 @@ function startServer(port = 3001) {
     console.log(` Running on: http://127.0.0.1:${actualPort}`);
     console.log(` City Focus: ${process.env.DEFAULT_CITY || 'Jaipur'}, Rajasthan`);
     console.log(`======================================================\n`);
+  });
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`[Server] Port ${actualPort} is already active, connecting to existing instance.`);
+    } else {
+      console.error('[Server Error]', err);
+    }
   });
   return server;
 }
