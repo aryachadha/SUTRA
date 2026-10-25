@@ -1,0 +1,231 @@
+// SUTRA — Smart Urban Taskforce & Resource Alliance
+// Minimal Relational Schema for Interdepartmental Municipal Infrastructure Coordination
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  DEPARTMENT_USER
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ProjectStatus {
+  PROPOSED
+  PLANNED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+}
+
+enum ConflictStatus {
+  DETECTED
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum ResourceStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model Department {
+  id                String              @id @default(uuid())
+  name              String              @unique
+  code              String              @unique
+  category          String
+  city              String              @default("Jaipur")
+  contactPerson     String
+  email             String
+  phone             String?
+  description       String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  users             User[]
+  ownedProjects     Project[]           @relation("OwningDepartment")
+  participations    ProjectDepartment[]
+  resources         Resource[]
+  resourceRequests  ResourceRequest[]   @relation("RequestingDepartment")
+  discussions       Discussion[]
+  discussionReplies DiscussionReply[]
+
+  @@index([city])
+}
+
+model User {
+  id                String             @id @default(uuid())
+  email             String             @unique
+  passwordHash      String
+  name              String
+  role              Role               @default(DEPARTMENT_USER)
+  designation       String?
+  departmentId      String?
+  department        Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  resourceRequests  ResourceRequest[]
+  discussions       Discussion[]
+  discussionReplies DiscussionReply[]
+  resolvedConflicts ProjectConflict[]  @relation("ConflictResolver")
+
+  @@index([email])
+}
+
+model Project {
+  id                  String             @id @default(uuid())
+  title               String
+  code                String             @unique
+  description         String?
+  owningDepartmentId  String
+  owningDepartment    Department         @relation("OwningDepartment", fields: [owningDepartmentId], references: [id], onDelete: Cascade)
+  locationName        String
+  latitude            Float?
+  longitude           Float?
+  startDate           DateTime
+  endDate             DateTime
+  responsibleOfficer  String
+  priority            ProjectPriority    @default(MEDIUM)
+  status              ProjectStatus      @default(PROPOSED)
+  budget              Float?
+  progress            Int                @default(0)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  participatingDepts  ProjectDepartment[]
+  conflictsAsProjectA ProjectConflict[]  @relation("ProjectA")
+  conflictsAsProjectB ProjectConflict[]  @relation("ProjectB")
+  discussions         Discussion[]
+
+  @@index([status])
+  @@index([startDate, endDate])
+}
+
+model ProjectDepartment {
+  id           String     @id @default(uuid())
+  projectId    String
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  role         String?
+  createdAt    DateTime   @default(now())
+
+  @@unique([projectId, departmentId])
+}
+
+model ProjectConflict {
+  id                  String         @id @default(uuid())
+  projectAId          String
+  projectA            Project        @relation("ProjectA", fields: [projectAId], references: [id], onDelete: Cascade)
+  projectBId          String
+  projectB            Project        @relation("ProjectB", fields: [projectBId], references: [id], onDelete: Cascade)
+  distanceMeters      Float
+  scheduleOverlapDays Int
+  suggestedAction     String
+  status              ConflictStatus @default(DETECTED)
+  resolutionNote      String?
+  resolvedById        String?
+  resolvedBy          User?          @relation("ConflictResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedAt          DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@unique([projectAId, projectBId])
+  @@index([status])
+}
+
+model Resource {
+  id                 String            @id @default(uuid())
+  name               String
+  category           String
+  owningDepartmentId String
+  owningDepartment   Department        @relation(fields: [owningDepartmentId], references: [id], onDelete: Cascade)
+  location           String
+  quantity           Int               @default(1)
+  status             ResourceStatus    @default(AVAILABLE)
+  description        String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  requests           ResourceRequest[]
+
+  @@index([category])
+  @@index([status])
+}
+
+model ResourceRequest {
+  id                     String         @id @default(uuid())
+  resourceId             String
+  resource               Resource       @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  requestingDepartmentId String
+  requestingDepartment   Department     @relation("RequestingDepartment", fields: [requestingDepartmentId], references: [id], onDelete: Cascade)
+  requestedById          String
+  requestedBy            User           @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+  startDate              DateTime
+  endDate                DateTime
+  purpose                String
+  quantity               Int            @default(1)
+  status                 RequestStatus  @default(PENDING)
+  reviewNote             String?
+  reviewedAt             DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  @@index([resourceId, startDate, endDate])
+  @@index([status])
+}
+
+model Discussion {
+  id           String            @id @default(uuid())
+  title        String
+  message      String
+  projectId    String?
+  project      Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  departmentId String
+  department   Department        @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  replies      DiscussionReply[]
+
+  @@index([projectId])
+}
+
+model DiscussionReply {
+  id           String     @id @default(uuid())
+  discussionId String
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  message      String
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([discussionId])
+}
